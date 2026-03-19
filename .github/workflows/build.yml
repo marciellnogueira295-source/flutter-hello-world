@@ -7,6 +7,12 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+# 添加权限配置，解决 GitHub Pages 部署问题
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   # ==================== Android Build ====================
   build-android:
@@ -71,10 +77,9 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
 
-  # ==================== iOS Build (需要 macOS runner) ====================
+  # ==================== iOS Build ====================
   build-ios:
     runs-on: macos-latest
-    if: false  # 默认关闭，需要时改为 true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -91,8 +96,13 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
+      - name: Create iOS Archive
+        run: |
+          cd build/ios/iphoneos
+          zip -r ../../../ios-build.zip Runner.app
+
       - name: Upload iOS Build
         uses: actions/upload-artifact@v4
         with:
           name: ios-build
-          path: build/ios/iphoneos/
+          path: ios-build.zip
